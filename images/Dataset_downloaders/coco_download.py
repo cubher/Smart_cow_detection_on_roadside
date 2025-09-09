@@ -16,17 +16,18 @@ coco = COCO(annFile)
 
 # Get category IDs
 cowId = coco.getCatIds(catNms=['cow'])[0]
-carId = coco.getCatIds(catNms=['car'])[0]
-motoId = coco.getCatIds(catNms=['motorcycle'])[0]
+#carId = coco.getCatIds(catNms=['car'])[0]
+motoId = coco.getCatIds(catNms=['parking meter'])[0]
 
 # Get all image IDs for each class
 cowImgIds = set(coco.getImgIds(catIds=[cowId]))
-carImgIds = set(coco.getImgIds(catIds=[carId]))
+#carImgIds = set(coco.getImgIds(catIds=[carId]))
 motoImgIds = set(coco.getImgIds(catIds=[motoId]))
 
 # Exclude → motorcycle images that do NOT contain cow or car
-excludeImgIds = cowImgIds.union(carImgIds)
-moto_only_ImgIds = list(motoImgIds.difference(excludeImgIds))
+excludeImgIds = cowImgIds
+includeImgIds =  motoImgIds
+moto_only_ImgIds = list(includeImgIds.difference(excludeImgIds))
 print(f"Found {len(moto_only_ImgIds)} images with motorcycle but NOT cow or car")
 
 # -----------------------------
@@ -35,7 +36,7 @@ print(f"Found {len(moto_only_ImgIds)} images with motorcycle but NOT cow or car"
 download_dir = f"coco_motorcycle_no_cow_car_{dataType}"
 os.makedirs(download_dir, exist_ok=True)
 
-for i, imgId in enumerate(moto_only_ImgIds[:200]):  # limit to 50 for demo
+for i, imgId in enumerate(moto_only_ImgIds[:400]):  # limit to 50 for demo
     img = coco.loadImgs(imgId)[0]
     url = img['coco_url']
     filename = os.path.join(download_dir, img['file_name'])
