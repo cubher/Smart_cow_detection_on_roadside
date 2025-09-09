@@ -2,30 +2,25 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 import matplotlib.pyplot as plt
 
-# Path to your dataset
-data_dir = "/images"
+# Paths
+train_dir = "dataset/train"
+test_dir = "dataset/test"
 
 # Parameters
 img_height = 64
 img_width = 64
 batch_size = 32
 
-# Load dataset (auto-labels based on folder names)
+# Load datasets
 train_ds = tf.keras.utils.image_dataset_from_directory(
-    data_dir,
-    validation_split=0.2,   # 80% train, 20% validation
-    subset="training",
-    seed=123,
+    train_dir,
     image_size=(img_height, img_width),
     batch_size=batch_size,
-    color_mode="grayscale"  # use grayscale to reduce memory
+    color_mode="grayscale"
 )
 
-val_ds = tf.keras.utils.image_dataset_from_directory(
-    data_dir,
-    validation_split=0.2,
-    subset="validation",
-    seed=123,
+test_ds = tf.keras.utils.image_dataset_from_directory(
+    test_dir,
     image_size=(img_height, img_width),
     batch_size=batch_size,
     color_mode="grayscale"
@@ -34,7 +29,7 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
 # Normalize images (0-1 range)
 normalization_layer = layers.Rescaling(1./255)
 train_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
-val_ds = val_ds.map(lambda x, y: (normalization_layer(x), y))
+test_ds = test_ds.map(lambda x, y: (normalization_layer(x), y))
 
 # Define a tiny CNN
 model = models.Sequential([
@@ -44,30 +39,30 @@ model = models.Sequential([
     layers.MaxPooling2D((2, 2)),
     layers.Flatten(),
     layers.Dense(32, activation='relu'),
-    layers.Dense(2, activation='softmax')  # cow vs not_cow
+    layers.Dense(2, activation='softmax')  # cow vs notcow
 ])
 
-# Compile model
+# Compile
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
 # Train
-history = model.fit(
-    train_ds,
-    validation_data=val_ds,
-    epochs=20
-)
+history = model.fit(train_ds, validation_data=test_ds, epochs=15)
 
-# Save model
+# Evaluate
+loss, acc = model.evaluate(test_ds)
+print(f"✅ Test Accuracy: {acc:.2f}")
+
+# Save Keras model
 model.save("cow_cnn_model.h5")
 
-# Convert to TFLite
+# Convert to TFLite with quantization
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]  # quantization
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
 tflite_model = converter.convert()
 
 with open("cow_model.tflite", "wb") as f:
     f.write(tflite_model)
 
-print("✅ Training complete! Model saved as cow_model.tflite")
+print("✅ Model training complete! Saved as cow_model.tflite")
