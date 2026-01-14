@@ -1,5 +1,6 @@
 .venv
-cow
+.vscode/
+cow/
 dataset
 images/cow
 images/notcow
